@@ -102,55 +102,83 @@ fig_trend = px.line(
 )
 st.plotly_chart(fig_trend, use_container_width=True)
 
-# --- Section 3: Walk Score Map ---
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import matplotlib.pyplot as plt
+import seaborn as sns
+import statsmodels.api as sm
+from sklearn.linear_model import Ridge
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import StandardScaler
 
-st.set_page_config(layout="wide", page_title="🏙️ Walk Score Map")
-st.title("🏙️ Atlanta Walk Score Spatial Visualization")
+# Load data
+df = pd.read_csv("Final.csv", encoding='ISO-8859-1')
 
-# --- Load Data ---
-@st.cache_data
-def load_walkscore_data():
-    df = pd.read_csv("WalkScore.csv")
-    df = df.dropna(subset=["POINT_X", "POINT_Y", "Walkscore"])
-    df = df[df["Walkscore"] > 0]
-    return df
-
-df = load_walkscore_data()
-
-# --- Sidebar Filter ---
-st.sidebar.header("🎯 Filter Walk Score")
-min_score = int(df["Walkscore"].min())
-max_score = int(df["Walkscore"].max())
-score_range = st.sidebar.slider("Select Walkscore Range", min_value=min_score, max_value=max_score,
-                                value=(min_score, max_score))
-
-filtered_df = df[
-    (df["Walkscore"] >= score_range[0]) & (df["Walkscore"] <= score_range[1])
+# Define relevant columns
+cols = [
+    'price', 'WalkScore_FinalWeighted', 'householdtotals_TOTHH_CY',
+    'HistoricalPopulation_TOTPOP_CY', 'householdincome_MEDHINC_CY',
+    'householdincome_PCI_CY', 'householdincome_GINI_CY',
+    'educationalattainment_BACHDEG_CY', 'crime_CRMCYTOTC',
+    'Total_Park_Need_Score_Ranking', 'Total_Park_Need_Score',
+    'Park_Conditions_and_Park_Level_Funding_Score', 'Community_Need_Score',
+    'Level_of_Service_Score', 'Community_Perception_Score_Average_',
+    'Maintenance_Funding_Score'
 ]
 
-# --- Map Visualization ---
-st.subheader("🗺️ Walk Score Map (Filtered)")
-fig = px.scatter_mapbox(
-    filtered_df,
-    lat="POINT_Y",
-    lon="POINT_X",
-    color="Walkscore",
-    size="Walkscore",
-    hover_data=["District", "POI", "2024MediumHouseholdIncome", "2024PerCapitaIncome"],
-    zoom=10,
-    mapbox_style="carto-positron",
-    color_continuous_scale="Viridis",
-    size_max=12,
-    height=650
-)
-st.plotly_chart(fig, use_container_width=True)
+# Data cleaning
+df_model = df[cols].apply(pd.to_numeric, errors='coerce').dropna()
 
-# --- Optional: Table View ---
-with st.expander("📊 View Data Table"):
-    st.dataframe(filtered_df)
+# Define X and y
+X = df_model.drop(columns='price')
+y = df_model['price']
 
-st.markdown("---")
-st.caption("Developed by Yan Duan | © 2025")
+# OLS Regression
+X_const = sm.add_constant(X)
+model = sm.OLS(y, X_const).fit()
+
+# Ridge Regression
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+ridge = Ridge(alpha=1.0)
+ridge.fit(X_scaled, y)
+
+# Random Forest
+rf = RandomForestRegressor(n_estimators=100, random_state=42)
+rf.fit(X, y)
+
+# Combine results
+comparison_df = pd.DataFrame({
+    'OLS_Coefficient': model.params[1:].values,
+    'Ridge_Coefficient': ridge.coef_,
+    'RandomForest_Importance': rf.feature_importances_
+}, index=X.columns)
+
+# Streamlit App
+st.title("Housing Price Model: Walkability, Socioeconomics, and Parks")
+
+st.subheader("OLS vs Ridge Coefficient Comparison")
+fig, ax = plt.subplots(figsize=(12, 6))
+bar_width = 0.35
+index = range(len(comparison_df))
+ax.bar(index, comparison_df['OLS_Coefficient'], bar_width, label='OLS Coefficient')
+ax.bar([i + bar_width for i in index], comparison_df['Ridge_Coefficient'], bar_width, label='Ridge Coefficient')
+ax.set_xticks([i + bar_width / 2 for i in index])
+ax.set_xticklabels(comparison_df.index, rotation=90)
+ax.set_ylabel("Coefficient Value")
+ax.set_title("OLS vs Ridge Coefficients")
+ax.legend()
+st.pyplot(fig)
+
+st.subheader("Random Forest Feature Importance")
+fig2, ax2 = plt.subplots(figsize=(10, 6))
+sorted_idx = rf.feature_importances_.argsort()
+ax2.barh(range(len(sorted_idx)), rf.feature_importances_[sorted_idx], align='center')
+ax2.set_yticks(range(len(sorted_idx)))
+ax2.set_yticklabels([X.columns[i] for i in sorted_idx])
+ax2.set_xlabel("Importance Score")
+ax2.set_title("Feature Importance (Random Forest)")
+st.pyplot(fig2)
+
+st.subheader("Model Summary (OLS)")
+st.text(model.summary())

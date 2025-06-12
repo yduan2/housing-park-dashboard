@@ -182,3 +182,16 @@ st.pyplot(fig2)
 
 st.subheader("Model Summary (OLS)")
 st.text(model.summary())
+
+import streamlit as st
+from PIL import Image
+
+st.subheader("🧠 Actual vs. Predicted Housing Prices")
+result_img = Image.open("result.png")
+st.image(result_img, caption="Model Prediction Accuracy (Random Forest)", use_column_width=True)
+
+st.subheader("📍 Walk Score and Housing Price Distribution in Atlanta")
+map_img = Image.open("correlationmap.jpg")
+st.image(map_img, caption="Hex-based Map of WalkScore and House Prices", use_column_width=True)
+
+

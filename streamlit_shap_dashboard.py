@@ -39,18 +39,25 @@ st.sidebar.subheader("📈 Model Performance")
 st.sidebar.metric("RMSE", f"${rmse:,.0f}")
 st.sidebar.metric("R²", f"{r2:.2f}")
 
-st.subheader("🔍 SHAP Summary Plot")
-X_sample = X.sample(1000, random_state=42)
+# SHAP using smaller sample
+st.subheader("🔍 SHAP Summary Plots (Sampled)")
+n_samples = st.sidebar.slider("SHAP Sample Size", 100, 1000, 300)
+X_sample = X_test.sample(n=n_samples, random_state=42)
+
 explainer = shap.TreeExplainer(model)
 shap_values = explainer.shap_values(X_sample)
 
-fig_bar = shap.summary_plot(shap_values, X_sample, plot_type="bar", show=False)
+# SHAP summary bar
+st.write("Top feature importance based on SHAP values:")
+shap.summary_plot(shap_values, X_sample, plot_type="bar", show=False)
 st.pyplot(bbox_inches='tight', dpi=300, clear_figure=True)
 
-st.subheader("🎯 SHAP Feature Impact (Direction + Spread)")
-fig_dot = shap.summary_plot(shap_values, X_sample, show=False)
+# SHAP summary dot
+st.write("Feature impact and directionality:")
+shap.summary_plot(shap_values, X_sample, show=False)
 st.pyplot(bbox_inches='tight', dpi=300, clear_figure=True)
 
+# SHAP force plot
 st.subheader("🔬 Force Plot for a Single Prediction")
 shap.initjs()
 row_idx = st.slider("Select a sample index", 0, X_sample.shape[0] - 1, 0)

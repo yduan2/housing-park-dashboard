@@ -43,7 +43,7 @@ st.sidebar.metric("RMSE", f"${rmse:,.0f}")
 st.sidebar.metric("R²", f"{r2:.2f}")
 
 # --- Section 1: Price Prediction Map ---
-st.subheader("🗺️ Predicted Home Prices Map")
+st.subheader("Predicted Home Prices Map")
 df_map = X_test.copy()
 df_map['ActualPrice'] = y_test.values
 df_map['PredictedPrice'] = y_pred
@@ -79,7 +79,7 @@ def load_trend_data():
 
 df_trend = load_trend_data()
 
-st.sidebar.header("📍 Filter Trends")
+st.sidebar.header("Filter Trends")
 cities = st.sidebar.multiselect("Select Cities", sorted(df_trend["City"].dropna().unique()), default=["Atlanta", "Sandy Springs"])
 counties = st.sidebar.multiselect("Select Counties", sorted(df_trend["CountyName"].dropna().unique()))
 
@@ -89,7 +89,7 @@ if cities:
 if counties:
     trend_filtered = trend_filtered[trend_filtered["CountyName"].isin(counties)]
 
-st.subheader("📊 Home Value Trends by Neighborhood")
+st.subheader("Home Value Trends by Neighborhood")
 fig_trend = px.line(
     trend_filtered,
     x="Date",
@@ -186,11 +186,11 @@ st.text(model.summary())
 import streamlit as st
 from PIL import Image
 
-st.subheader("🧠 Actual vs. Predicted Housing Prices")
+st.subheader("Actual vs. Predicted Housing Prices")
 result_img = Image.open("result.png")
 st.image(result_img, caption="Model Prediction Accuracy (Random Forest)", use_column_width=True)
 
-st.subheader("📍 Walk Score and Housing Price Distribution in Atlanta")
+st.subheader("Walk Score and Housing Price Distribution in Atlanta")
 map_img = Image.open("correlationmap.jpg")
 st.image(map_img, caption="Hex-based Map of WalkScore and House Prices", use_column_width=True)
 

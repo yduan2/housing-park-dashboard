@@ -8,7 +8,7 @@ from sklearn.metrics import r2_score, mean_squared_error
 import seaborn as sns
 
 st.set_page_config(page_title="Housing + Park Model", layout="wide")
-st.title("🏡 Housing + Park Model Dashboard")
+st.title("Housing + Park Model Dashboard")
 
 # --- Load and preprocess data ---
 @st.cache_data
@@ -40,12 +40,12 @@ rmse = np.sqrt(mean_squared_error(y_test, y_pred))
 r2 = r2_score(y_test, y_pred)
 
 # --- Sidebar Metrics ---
-st.sidebar.header("📊 Model Performance")
+st.sidebar.header("Model Performance")
 st.sidebar.metric("RMSE", f"${rmse:,.0f}")
 st.sidebar.metric("R²", f"{r2:.2f}")
 
 # --- Feature Importance ---
-st.subheader("📌 Top 20 Feature Importances (Random Forest)")
+st.subheader("Top 20 Feature Importances (Random Forest)")
 importances = model.feature_importances_
 indices = np.argsort(importances)[-20:]
 top_features = X.columns[indices]
@@ -58,7 +58,7 @@ ax.set_title("Top 20 Important Features")
 st.pyplot(fig)
 
 # --- Correlation Heatmap ---
-st.subheader("🧮 Correlation Heatmap (Raw Features)")
+st.subheader("Correlation Heatmap (Raw Features)")
 with st.expander("Show Correlation Matrix"):
     corr = df.corr(numeric_only=True)
     fig_corr, ax_corr = plt.subplots(figsize=(10, 8))

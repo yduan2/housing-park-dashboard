@@ -103,44 +103,54 @@ fig_trend = px.line(
 st.plotly_chart(fig_trend, use_container_width=True)
 
 # --- Section 3: Walk Score Map ---
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+
+st.set_page_config(layout="wide", page_title="🏙️ Walk Score Map")
+st.title("🏙️ Atlanta Walk Score Spatial Visualization")
+
+# --- Load Data ---
 @st.cache_data
 def load_walkscore_data():
-    df = pd.read_csv("walkscore.csv")
-    df = df.dropna(subset=["POINT_X", "POINT_Y", "WalkScore_FinalWeighted"])
-    df = df[df["WalkScore_FinalWeighted"] > 0]
+    df = pd.read_csv("WalkScore.csv")
+    df = df.dropna(subset=["POINT_X", "POINT_Y", "Walkscore"])
+    df = df[df["Walkscore"] > 0]
     return df
 
-walk_df = load_walkscore_data()
+df = load_walkscore_data()
 
-st.sidebar.header("🚶 Walk Score Filter")
-min_score = int(walk_df["WalkScore_FinalWeighted"].min())
-max_score = int(walk_df["WalkScore_FinalWeighted"].max())
-score_range = st.sidebar.slider("Walk Score Range", min_value=min_score, max_value=max_score,
+# --- Sidebar Filter ---
+st.sidebar.header("🎯 Filter Walk Score")
+min_score = int(df["Walkscore"].min())
+max_score = int(df["Walkscore"].max())
+score_range = st.sidebar.slider("Select Walkscore Range", min_value=min_score, max_value=max_score,
                                 value=(min_score, max_score))
 
-filtered_walk = walk_df[
-    (walk_df["WalkScore_FinalWeighted"] >= score_range[0]) &
-    (walk_df["WalkScore_FinalWeighted"] <= score_range[1])
+filtered_df = df[
+    (df["Walkscore"] >= score_range[0]) & (df["Walkscore"] <= score_range[1])
 ]
 
-st.subheader("📍 Walk Score Map")
-fig_walk = px.scatter_mapbox(
-    filtered_walk,
+# --- Map Visualization ---
+st.subheader("🗺️ Walk Score Map (Filtered)")
+fig = px.scatter_mapbox(
+    filtered_df,
     lat="POINT_Y",
     lon="POINT_X",
-    color="WalkScore_FinalWeighted",
-    size="WalkScore_FinalWeighted",
-    size_max=12,
+    color="Walkscore",
+    size="Walkscore",
+    hover_data=["District", "POI", "2024MediumHouseholdIncome", "2024PerCapitaIncome"],
     zoom=10,
     mapbox_style="carto-positron",
     color_continuous_scale="Viridis",
-    hover_data=["WalkScore_FinalWeighted", "Join_Count", "Sidewalks", "District"]
+    size_max=12,
+    height=650
 )
-fig_walk.update_layout(margin={"r": 0, "t": 30, "l": 0, "b": 0}, height=600)
-st.plotly_chart(fig_walk, use_container_width=True)
+st.plotly_chart(fig, use_container_width=True)
 
-with st.expander("📊 View Walk Score Table"):
-    st.dataframe(filtered_walk)
+# --- Optional: Table View ---
+with st.expander("📊 View Data Table"):
+    st.dataframe(filtered_df)
 
 st.markdown("---")
 st.caption("Developed by Yan Duan | © 2025")

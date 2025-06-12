@@ -43,7 +43,7 @@ st.sidebar.metric("RMSE", f"${rmse:,.0f}")
 st.sidebar.metric("R²", f"{r2:.2f}")
 
 # --- Scatter Map of Predictions ---
-st.subheader("🗺️ Predicted Home Prices Map")
+st.subheader("🗼️ Predicted Home Prices Map")
 df_map = X_test.copy()
 df_map['ActualPrice'] = y_test.values
 df_map['PredictedPrice'] = y_pred
@@ -104,43 +104,30 @@ fig_trend = px.line(
 )
 st.plotly_chart(fig_trend, use_container_width=True)
 
-st.markdown("---")
-st.caption("Developed by Yan Duan | 2025")
+# --- Walk Score Map ---
+st.title("🌍 Atlanta Walk Score Explorer Dashboard")
 
-
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-
-# Set page configuration
-st.set_page_config(layout="wide")
-st.title("🏙️ Atlanta Walk Score Explorer Dashboard")
-
-# Load and clean Walk Score point data
 @st.cache_data
 def load_walkscore_data():
-    df = pd.read_csv("walkscore.csv")  # If hosted in Streamlit Cloud, use relative path
+    df = pd.read_csv("walkscore.csv")
     df = df.dropna(subset=["POINT_X", "POINT_Y", "WalkScore_FinalWeighted"])
     df = df[df["WalkScore_FinalWeighted"] > 0]
     return df
 
 walk_df = load_walkscore_data()
 
-# Sidebar filters
-st.sidebar.header("Filter Options")
+st.sidebar.header("Walk Score Filter")
 min_score = int(walk_df["WalkScore_FinalWeighted"].min())
 max_score = int(walk_df["WalkScore_FinalWeighted"].max())
-score_range = st.sidebar.slider("Select Walk Score Range", min_value=min_score, max_value=max_score,
-                                value=(min_score, max_score))
+score_range = st.sidebar.slider("Select Walk Score Range", min_value=min_score, max_value=max_score, value=(min_score, max_score))
 
 filtered_df = walk_df[
     (walk_df["WalkScore_FinalWeighted"] >= score_range[0]) &
     (walk_df["WalkScore_FinalWeighted"] <= score_range[1])
 ]
 
-# Map visualization
-st.subheader("🗺️ Walk Score Map (Filtered)")
-fig = px.scatter_mapbox(
+st.subheader("🗼️ Walk Score Map (Filtered)")
+fig_walk = px.scatter_mapbox(
     filtered_df,
     lat="POINT_Y",
     lon="POINT_X",
@@ -152,10 +139,12 @@ fig = px.scatter_mapbox(
     color_continuous_scale="Viridis",
     hover_data=["Sidewalks", "Intersections", "POI", "2024 Median Household Income"]
 )
-fig.update_layout(margin={"r":0, "t":30, "l":0, "b":0}, height=650)
-st.plotly_chart(fig, use_container_width=True)
+fig_walk.update_layout(margin={"r":0, "t":30, "l":0, "b":0}, height=650)
+st.plotly_chart(fig_walk, use_container_width=True)
 
 # Optional: Data Table
-with st.expander("📊 View Data Table"):
+with st.expander("📊 View Walk Score Data Table"):
     st.dataframe(filtered_df)
 
+st.markdown("---")
+st.caption("Developed by Yan Duan | 2025")

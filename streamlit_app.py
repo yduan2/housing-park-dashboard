@@ -7,8 +7,8 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score
 
-st.set_page_config(page_title="GA Housing + Park Dashboard", layout="wide")
-st.title("🏠 Georgia Housing Price Prediction & Neighborhood Trends")
+st.set_page_config(page_title="GA Housing + Walkability Dashboard", layout="wide")
+st.title("🏠 Georgia Housing, Neighborhood, and Walk Score Dashboard")
 
 # --- Load Housing Data ---
 @st.cache_data
@@ -42,8 +42,8 @@ st.sidebar.header("📈 Model Performance")
 st.sidebar.metric("RMSE", f"${rmse:,.0f}")
 st.sidebar.metric("R²", f"{r2:.2f}")
 
-# --- Scatter Map of Predictions ---
-st.subheader("🗼️ Predicted Home Prices Map")
+# --- Section 1: Price Prediction Map ---
+st.subheader("🗺️ Predicted Home Prices Map")
 df_map = X_test.copy()
 df_map['ActualPrice'] = y_test.values
 df_map['PredictedPrice'] = y_pred
@@ -62,7 +62,7 @@ fig_map = px.scatter_mapbox(
 )
 st.plotly_chart(fig_map, use_container_width=True)
 
-# --- Load Neighborhood Trend Data ---
+# --- Section 2: Neighborhood Trends ---
 @st.cache_data
 def load_trend_data():
     df = pd.read_csv("GANeighborhood.csv")
@@ -79,8 +79,7 @@ def load_trend_data():
 
 df_trend = load_trend_data()
 
-# --- Sidebar Filters ---
-st.sidebar.header("📍 Filter Neighborhood Trends")
+st.sidebar.header("📍 Filter Trends")
 cities = st.sidebar.multiselect("Select Cities", sorted(df_trend["City"].dropna().unique()), default=["Atlanta", "Sandy Springs"])
 counties = st.sidebar.multiselect("Select Counties", sorted(df_trend["CountyName"].dropna().unique()))
 
@@ -90,7 +89,6 @@ if cities:
 if counties:
     trend_filtered = trend_filtered[trend_filtered["CountyName"].isin(counties)]
 
-# --- Trend Plot ---
 st.subheader("📊 Home Value Trends by Neighborhood")
 fig_trend = px.line(
     trend_filtered,
@@ -104,9 +102,7 @@ fig_trend = px.line(
 )
 st.plotly_chart(fig_trend, use_container_width=True)
 
-# --- Walk Score Map ---
-st.title("🌍 Atlanta Walk Score Explorer Dashboard")
-
+# --- Section 3: Walk Score Map ---
 @st.cache_data
 def load_walkscore_data():
     df = pd.read_csv("walkscore.csv")
@@ -116,19 +112,20 @@ def load_walkscore_data():
 
 walk_df = load_walkscore_data()
 
-st.sidebar.header("Walk Score Filter")
+st.sidebar.header("🚶 Walk Score Filter")
 min_score = int(walk_df["WalkScore_FinalWeighted"].min())
 max_score = int(walk_df["WalkScore_FinalWeighted"].max())
-score_range = st.sidebar.slider("Select Walk Score Range", min_value=min_score, max_value=max_score, value=(min_score, max_score))
+score_range = st.sidebar.slider("Walk Score Range", min_value=min_score, max_value=max_score,
+                                value=(min_score, max_score))
 
-filtered_df = walk_df[
+filtered_walk = walk_df[
     (walk_df["WalkScore_FinalWeighted"] >= score_range[0]) &
     (walk_df["WalkScore_FinalWeighted"] <= score_range[1])
 ]
 
-st.subheader("🗼️ Walk Score Map (Filtered)")
+st.subheader("📍 Walk Score Map")
 fig_walk = px.scatter_mapbox(
-    filtered_df,
+    filtered_walk,
     lat="POINT_Y",
     lon="POINT_X",
     color="WalkScore_FinalWeighted",
@@ -137,14 +134,13 @@ fig_walk = px.scatter_mapbox(
     zoom=10,
     mapbox_style="carto-positron",
     color_continuous_scale="Viridis",
-    hover_data=["Sidewalks", "Intersections", "POI", "2024 Median Household Income"]
+    hover_data=["WalkScore_FinalWeighted", "Join_Count", "Sidewalks", "District"]
 )
-fig_walk.update_layout(margin={"r":0, "t":30, "l":0, "b":0}, height=650)
+fig_walk.update_layout(margin={"r": 0, "t": 30, "l": 0, "b": 0}, height=600)
 st.plotly_chart(fig_walk, use_container_width=True)
 
-# Optional: Data Table
-with st.expander("📊 View Walk Score Data Table"):
-    st.dataframe(filtered_df)
+with st.expander("📊 View Walk Score Table"):
+    st.dataframe(filtered_walk)
 
 st.markdown("---")
-st.caption("Developed by Yan Duan | 2025")
+st.caption("Developed by Yan Duan | © 2025")
